@@ -67,7 +67,8 @@ class GenericModel(object):
                 raise ValueError('undefined param %s' % k)
             setattr(self, k, v)
         self.session = tf.Session()
-        self.create_network()
+        with self.session:
+            self.create_network()
         self.session.run(tf.initialize_all_variables())
 
     def act(self, state):
