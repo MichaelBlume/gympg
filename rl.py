@@ -254,6 +254,11 @@ class GymTrainer(object):
         if done:
             self.reset_game()
 
+    def run(self, steps, run_every=10000, frames=1):
+        for i in range(steps):
+            render = i % run_every < frames
+            self.step(render=render)
+
 def main():
     model = PongModel()
     trainer = GymTrainer(model)
