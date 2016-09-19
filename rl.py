@@ -20,8 +20,9 @@ class GenericModel(object):
         self.inputs, output_preactivation, weight_norm = self.create_innards()
 
         pre_output = tf.nn.softmax(output_preactivation)
-        scaled_output = pre_output * (1-self.stochastic_factor)
-        output = scaled_output + self.stochastic_factor / self.ACTION_COUNT
+        stochastic_var = tf.placeholder(tf.float32)
+        scaled_output = pre_output * (1-stochastic_var)
+        output = scaled_output + stochastic_var / self.ACTION_COUNT
 
         rewards = tf.placeholder(tf.float32, [None])
         actions_taken = tf.placeholder(tf.int32, [None])
@@ -30,13 +31,19 @@ class GenericModel(object):
         probs_taken = output * actions_one_hot
         probs = tf.reduce_sum(probs_taken, reduction_indices=[1])
         logprobs = tf.log(probs)
-        regular_loss = self.regularization * weight_norm
+
+        regularization_var = tf.placeholder(tf.float32)
+        regular_loss = regularization_var * weight_norm
         loss = -tf.reduce_sum(logprobs * rewards) + regular_loss
-        opt = tf.train.RMSPropOptimizer(self.learning_rate).minimize(loss)
+        rate_var = tf.placeholder(tf.float32)
+        opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss)
 
         self.output = output
+        self.stochastic_var = stochastic_var
         self.rewards = rewards
         self.actions_taken = actions_taken
+        self.regularization_var = regularization_var
+        self.rate_var = rate_var
         self.loss = loss
         self.opt = opt
 
@@ -48,7 +55,10 @@ class GenericModel(object):
             self.session.run([self.loss, self.opt],
                     {self.inputs: states[s],
                      self.actions_taken: actions[s],
-                     self.rewards: expecteds[s]})
+                     self.rewards: expecteds[s],
+                     self.stochastic_var: self.stochastic_factor,
+                     self.regularization_var: self.regularization,
+                     self.rate_var: self.learning_rate})
 
     def __init__(self, **kwargs):
         # you can set arbitrary hyperparameters
@@ -62,7 +72,8 @@ class GenericModel(object):
 
     def act(self, state):
         result = self.session.run(self.output,
-                {self.inputs: [state]})
+                {self.inputs: [state],
+                 self.stochastic_var: self.stochastic_factor})
         ret = np.argmax(np.random.multinomial(1, result[0]))
         return ret
 
