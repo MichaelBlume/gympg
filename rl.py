@@ -23,7 +23,8 @@ class GenericModel(object):
     training_batch_ind = 0
 
     def create_network(self):
-        self.inputs, output_preactivation, weight_norm = self.create_innards()
+        self.inputs, output_preactivation, weight_norm = \
+                self.create_innards()
 
         pre_output = tf.nn.softmax(output_preactivation)
         stochastic_var = tf.placeholder(tf.float32)
@@ -81,7 +82,8 @@ class GenericModel(object):
                      self.episode_length: epl,
                      self.regularization_var: self.regularization,
                      self.rate_var: self.learning_rate})
-            self.summary_writer.add_summary(summaries, self.training_batch_ind)
+            self.summary_writer.add_summary(
+                    summaries, self.training_batch_ind)
 
     def __init__(self, **kwargs):
         # you can set arbitrary hyperparameters
@@ -200,7 +202,8 @@ class ConvPongModel(BasePongModel):
         b_fc2 = bias_variable([self.ACTION_COUNT])
         y = tf.matmul(h_fc1, W_fc2) + b_fc2
         return pre_inputs, y, norm(
-                W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2)
+                W_conv1, b_conv1, W_conv2, b_conv2,
+                W_fc1, b_fc1, W_fc2, b_fc2)
 
 class SimplePongModel(BasePongModel):
     hidden_size = 200
