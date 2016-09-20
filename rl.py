@@ -162,7 +162,7 @@ class BasePongModel(GenericModel):
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
-class PongModel(BasePongModel):
+class ConvPongModel(BasePongModel):
     max_batch = 125
     def create_innards(self):
         FIELD_WIDTH = 80
