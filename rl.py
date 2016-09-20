@@ -3,6 +3,7 @@ import tensorflow as tf
 import gym
 import numpy as np
 import math
+import os.path
 
 
 class GenericModel(object):
@@ -17,7 +18,7 @@ class GenericModel(object):
     max_batch = 10000
 
     # output
-    summaries_path = 'summaries'
+    saves_dir = 'saves'
 
     # state
     training_batch_ind = 0
@@ -85,7 +86,8 @@ class GenericModel(object):
             self.summary_writer.add_summary(
                     summaries, self.training_batch_ind)
 
-    def __init__(self, **kwargs):
+    def __init__(self, save_name, **kwargs):
+        self.save_name = save_name
         # you can set arbitrary hyperparameters
         for k, v in kwargs.items():
             if getattr(self, k, None) is None:
@@ -94,8 +96,14 @@ class GenericModel(object):
         self.session = tf.Session()
         with self.session:
             self.create_network()
-        self.summary_writer = tf.train.SummaryWriter(self.summaries_path)
-        self.session.run(tf.initialize_all_variables())
+        self.summary_writer = tf.train.SummaryWriter(
+                '%s/%s_summaries' % (self.saves_dir, self.save_name))
+        saver = tf.train.Saver()
+        self.save_path = '%s/%s.ckpt' % (self.saves_dir, self.save_name)
+        if os.path.isfile(self.save_path):
+            saver.restore(self.session, self.save_path)
+        else:
+            self.session.run(tf.initialize_all_variables())
 
     def act(self, state):
         result = self.session.run(self.output,
