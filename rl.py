@@ -47,6 +47,7 @@ class GenericModel(object):
         logprobs_taken = tf.reduce_sum(logs_taken, reduction_indices=[1])
 
         regularization_var = tf.placeholder(tf.float32)
+        tf.scalar_summary('regularization', regularization_var)
         regular_loss = regularization_var * weight_norm
         tf.scalar_summary('weight_norm', weight_norm)
         loss = -tf.reduce_sum(logprobs_taken * rewards) + regular_loss
