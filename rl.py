@@ -88,6 +88,7 @@ class GenericModel(object):
                      self.rate_var: self.learning_rate})
             self.summary_writer.add_summary(
                     summaries, self.global_step)
+        self.saver.save(self.session, self.save_path)
 
     def __init__(self, save_name, **kwargs):
         self.save_name = save_name
@@ -101,10 +102,10 @@ class GenericModel(object):
             self.create_network()
         self.summary_writer = tf.train.SummaryWriter(
                 '%s/%s_summaries' % (self.saves_dir, self.save_name))
-        saver = tf.train.Saver()
+        self.saver = tf.train.Saver()
         self.save_path = '%s/%s.ckpt' % (self.saves_dir, self.save_name)
         if os.path.isfile(self.save_path):
-            saver.restore(self.session, self.save_path)
+            self.saver.restore(self.session, self.save_path)
         else:
             self.session.run(tf.initialize_all_variables())
 
