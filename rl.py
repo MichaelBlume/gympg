@@ -21,7 +21,6 @@ class GenericModel(object):
     saves_dir = 'saves'
 
     # state
-    training_batch_ind = 0
 
     def create_network(self):
         self.inputs, output_preactivation, weight_norm = \
@@ -55,7 +54,11 @@ class GenericModel(object):
         loss = -tf.reduce_sum(logprobs_taken * rewards) + regular_loss
         rate_var = tf.placeholder(tf.float32)
         tf.scalar_summary('rate', rate_var)
-        opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss)
+        global_step = tf.Variable(
+                0, name='global_step', trainable=False)
+        opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss,
+                global_step=global_step)
+
 
         self.output = output
         self.stochastic_var = stochastic_var
@@ -65,6 +68,7 @@ class GenericModel(object):
         self.rate_var = rate_var
         self.loss = loss
         self.opt = opt
+        self.global_step = global_step
         self.summaries = tf.merge_all_summaries()
 
 
@@ -72,7 +76,6 @@ class GenericModel(object):
         
         epl = len(states)
         for i in range(math.ceil(epl / self.max_batch)):
-            self.training_batch_ind += 1
             s = slice(i * self.max_batch,(i+1) * self.max_batch)
             _, summaries = self.session.run(
                     [self.opt, self.summaries],
@@ -84,7 +87,7 @@ class GenericModel(object):
                      self.regularization_var: self.regularization,
                      self.rate_var: self.learning_rate})
             self.summary_writer.add_summary(
-                    summaries, self.training_batch_ind)
+                    summaries, self.global_step)
 
     def __init__(self, save_name, **kwargs):
         self.save_name = save_name
