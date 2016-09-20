@@ -13,6 +13,7 @@ class GenericModel(object):
     learning_rate = 0.01
     stochastic_factor = 0.05
     regularization = 0.1
+    bias_slowdown = 0.1
 
     # implementation
     max_batch = 10000
@@ -23,6 +24,9 @@ class GenericModel(object):
     # state
 
     def create_network(self):
+        self.slow_bias_var = tf.placeholder(tf.float32)
+        tf.scalar_summary('bias_slowdown', self.slow_bias_var)
+
         self.inputs, output_preactivation, weight_norm = \
                 self.create_innards()
 
@@ -82,6 +86,7 @@ class GenericModel(object):
                     {self.inputs: states[s],
                      self.actions_taken: actions[s],
                      self.rewards: expecteds[s],
+                     self.slow_bias_var: self.bias_slowdown,
                      self.stochastic_var: self.stochastic_factor,
                      self.episode_length: epl,
                      self.regularization_var: self.regularization,
@@ -112,6 +117,7 @@ class GenericModel(object):
     def act(self, state):
         result = self.session.run(self.output,
                 {self.inputs: [state],
+                 self.slow_bias_var: self.bias_slowdown,
                  self.stochastic_var: self.stochastic_factor})
         ret = np.argmax(np.random.multinomial(1, result[0]))
         return ret
@@ -127,7 +133,7 @@ class GenericModel(object):
 
     def bias_variable(self, shape):
         initial = tf.constant(0.1, shape=shape)
-        return tf.Variable(initial)
+        return tf.Variable(initial) * self.slow_bias_var
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
