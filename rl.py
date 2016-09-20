@@ -200,13 +200,9 @@ class ConvPongModel(BasePongModel):
         b_conv1 = bias_variable([16])
         h_conv1 = tf.nn.relu6(conv2d(inputs, W_conv1) + b_conv1)
 
-        W_conv2 = weight_variable([3, 3, 16, 16])
-        b_conv2 = bias_variable([16])
-        h_conv2 = tf.nn.relu6(conv2d(h_conv1, W_conv2) + b_conv2)
-
         W_fc1 = weight_variable([FIELD_AREA * 16, 200])
         b_fc1 = bias_variable([200])
-        h_conv2_flat = tf.reshape(h_conv2, [-1, FIELD_AREA*16])
+        h_conv2_flat = tf.reshape(h_conv1, [-1, FIELD_AREA*16])
         h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
 
         W_fc2 = tf.Variable(
