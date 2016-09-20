@@ -16,6 +16,12 @@ class GenericModel(object):
     # implementation
     max_batch = 10000
 
+    # output
+    summaries_path = 'summaries'
+
+    # state
+    training_batch_ind = 0
+
     def create_network(self):
         self.inputs, output_preactivation, weight_norm = self.create_innards()
 
@@ -24,18 +30,24 @@ class GenericModel(object):
         scaled_output = pre_output * (1-stochastic_var)
         output = scaled_output + stochastic_var / self.ACTION_COUNT
 
+        logprobs = tf.log(output)
+        expected_logs = logprobs * output
+        entropy = tf.reduce_sum(expected_logs, reduction_indices=[1])
+        tf.scalar_summary('entropy', tf.reduce_mean(entropy))
+
         rewards = tf.placeholder(tf.float32, [None])
         actions_taken = tf.placeholder(tf.int32, [None])
         actions_one_hot = tf.one_hot(
                 actions_taken, self.ACTION_COUNT, dtype=tf.float32)
-        probs_taken = output * actions_one_hot
-        probs = tf.reduce_sum(probs_taken, reduction_indices=[1])
-        logprobs = tf.log(probs)
+        logs_taken = logprobs * actions_one_hot
+        logprobs_taken = tf.reduce_sum(logs_taken, reduction_indices=[1])
 
         regularization_var = tf.placeholder(tf.float32)
         regular_loss = regularization_var * weight_norm
-        loss = -tf.reduce_sum(logprobs * rewards) + regular_loss
+        tf.scalar_summary('weight_norm', weight_norm)
+        loss = -tf.reduce_sum(logprobs_taken * rewards) + regular_loss
         rate_var = tf.placeholder(tf.float32)
+        tf.scalar_summary('rate', rate_var)
         opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss)
 
         self.output = output
@@ -46,19 +58,23 @@ class GenericModel(object):
         self.rate_var = rate_var
         self.loss = loss
         self.opt = opt
+        self.summaries = tf.merge_all_summaries()
 
 
     def update(self, states, actions, expecteds):
         
         for i in range(math.ceil(len(states) / self.max_batch)):
+            self.training_batch_ind += 1
             s = slice(i * self.max_batch,(i+1) * self.max_batch)
-            self.session.run([self.loss, self.opt],
+            _, summaries = self.session.run(
+                    [self.opt, self.summaries],
                     {self.inputs: states[s],
                      self.actions_taken: actions[s],
                      self.rewards: expecteds[s],
                      self.stochastic_var: self.stochastic_factor,
                      self.regularization_var: self.regularization,
                      self.rate_var: self.learning_rate})
+            self.summary_writer.add_summary(summaries, self.training_batch_ind)
 
     def __init__(self, **kwargs):
         # you can set arbitrary hyperparameters
@@ -69,6 +85,7 @@ class GenericModel(object):
         self.session = tf.Session()
         with self.session:
             self.create_network()
+        self.summary_writer = tf.train.SummaryWriter(self.summaries_path)
         self.session.run(tf.initialize_all_variables())
 
     def act(self, state):
