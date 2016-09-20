@@ -125,14 +125,14 @@ class GenericModel(object):
     def is_done(self, state, reward, done, info):
         return done
 
+    def bias_variable(self, shape):
+        initial = tf.constant(0.1, shape=shape)
+        return tf.Variable(initial)
+
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
    
-def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
-
 class PoleModel(GenericModel):
 
     GAME_NAME = 'CartPole-v0'
@@ -144,12 +144,12 @@ class PoleModel(GenericModel):
         inputs = tf.placeholder(tf.float32, [None, 4])
 
         W1 = weight_variable([4, self.hidden_size])
-        bias1 = bias_variable([self.hidden_size])
+        bias1 = self.bias_variable([self.hidden_size])
         hidden_preactivation = tf.matmul(inputs, W1) + bias1
         hidden_activation = tf.nn.relu6(hidden_preactivation)
 
         W2 = weight_variable([self.hidden_size, 2])
-        bias2 = bias_variable([2])
+        bias2 = self.bias_variable([2])
         output_preactivation = tf.matmul(hidden_activation, W2) + bias2
 
         return inputs, output_preactivation, 0
@@ -197,17 +197,17 @@ class ConvPongModel(BasePongModel):
         inputs = tf.reshape(pre_inputs, [-1, FIELD_WIDTH, FIELD_WIDTH, 1])
 
         W_conv1 = weight_variable([3, 3, 1, 16])
-        b_conv1 = bias_variable([16])
+        b_conv1 = self.bias_variable([16])
         h_conv1 = tf.nn.relu6(conv2d(inputs, W_conv1) + b_conv1)
 
         W_fc1 = weight_variable([FIELD_AREA * 16, 200])
-        b_fc1 = bias_variable([200])
+        b_fc1 = self.bias_variable([200])
         h_conv2_flat = tf.reshape(h_conv1, [-1, FIELD_AREA*16])
         h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
 
         W_fc2 = tf.Variable(
                 tf.zeros_initializer([200, self.ACTION_COUNT]))
-        b_fc2 = bias_variable([self.ACTION_COUNT])
+        b_fc2 = self.bias_variable([self.ACTION_COUNT])
         y = tf.matmul(h_fc1, W_fc2) + b_fc2
         return pre_inputs, y, norm(
                 W_conv1, b_conv1, W_conv2, b_conv2,
@@ -220,11 +220,11 @@ class SimplePongModel(BasePongModel):
         inputs = tf.reshape(pre_inputs, [-1, 6400])
 
         W1 = weight_variable([6400, self.hidden_size])
-        b1 = bias_variable([self.hidden_size])
+        b1 = self.bias_variable([self.hidden_size])
         h1 = tf.nn.relu6(tf.matmul(inputs, W1) + b1)
 
         W2 = weight_variable([self.hidden_size, self.ACTION_COUNT])
-        b2 = bias_variable([self.ACTION_COUNT])
+        b2 = self.bias_variable([self.ACTION_COUNT])
         output = tf.matmul(h1, W2) + b2
 
         return pre_inputs, output, norm(W1, b1, W2, b2)
