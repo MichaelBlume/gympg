@@ -32,7 +32,7 @@ class GenericModel(object):
 
         logprobs = tf.log(output)
         expected_logs = logprobs * output
-        entropy = tf.reduce_sum(expected_logs, reduction_indices=[1])
+        entropy = tf.reduce_sum(-expected_logs, reduction_indices=[1])
         tf.scalar_summary('entropy', tf.reduce_mean(entropy))
 
         rewards = tf.placeholder(tf.float32, [None])
