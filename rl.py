@@ -29,6 +29,7 @@ class GenericModel(object):
         stochastic_var = tf.placeholder(tf.float32)
         scaled_output = pre_output * (1-stochastic_var)
         output = scaled_output + stochastic_var / self.ACTION_COUNT
+        tf.scalar_summary('stochastic', stochastic_var)
 
         logprobs = tf.log(output)
         expected_logs = logprobs * output
