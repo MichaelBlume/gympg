@@ -31,6 +31,9 @@ class GenericModel(object):
         output = scaled_output + stochastic_var / self.ACTION_COUNT
         tf.scalar_summary('stochastic', stochastic_var)
 
+        self.episode_length = tf.placeholder(tf.float32)
+        tf.scalar_summary('episode_length', self.episode_length)
+
         logprobs = tf.log(output)
         expected_logs = logprobs * output
         entropy = tf.reduce_sum(-expected_logs, reduction_indices=[1])
@@ -64,7 +67,8 @@ class GenericModel(object):
 
     def update(self, states, actions, expecteds):
         
-        for i in range(math.ceil(len(states) / self.max_batch)):
+        epl = len(states)
+        for i in range(math.ceil(epl / self.max_batch)):
             self.training_batch_ind += 1
             s = slice(i * self.max_batch,(i+1) * self.max_batch)
             _, summaries = self.session.run(
@@ -73,6 +77,7 @@ class GenericModel(object):
                      self.actions_taken: actions[s],
                      self.rewards: expecteds[s],
                      self.stochastic_var: self.stochastic_factor,
+                     self.episode_length: epl,
                      self.regularization_var: self.regularization,
                      self.rate_var: self.learning_rate})
             self.summary_writer.add_summary(summaries, self.training_batch_ind)
