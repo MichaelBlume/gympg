@@ -163,6 +163,9 @@ class BasePongModel(GenericModel):
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
+def norm(*args):
+    return sum(tf.reduce_sum(a * a) for a in args)
+
 class ConvPongModel(BasePongModel):
     max_batch = 125
     def create_innards(self):
@@ -190,7 +193,8 @@ class ConvPongModel(BasePongModel):
                 tf.zeros_initializer([200, self.ACTION_COUNT]))
         b_fc2 = bias_variable([self.ACTION_COUNT])
         y = tf.matmul(h_fc1, W_fc2) + b_fc2
-        return pre_inputs, y, 0
+        return pre_inputs, y, norm(
+                W_conv1, b_conv1, W_conv2, b_conv2, W_fc1, b_fc1, W_fc2, b_fc2)
 
 class SimplePongModel(BasePongModel):
     hidden_size = 200
@@ -201,17 +205,12 @@ class SimplePongModel(BasePongModel):
         W1 = weight_variable([6400, self.hidden_size])
         b1 = bias_variable([self.hidden_size])
         h1 = tf.nn.relu6(tf.matmul(inputs, W1) + b1)
-        W1_norm = tf.reduce_sum(W1 * W1) 
-        b1_norm = tf.reduce_sum(b1 * b1)
 
         W2 = weight_variable([self.hidden_size, self.ACTION_COUNT])
         b2 = bias_variable([self.ACTION_COUNT])
         output = tf.matmul(h1, W2) + b2
-        W2_norm = tf.reduce_sum(W2 * W2)
-        b2_norm = tf.reduce_sum(b2 * b2)
 
-        norm = W1_norm + W2_norm + b1_norm + b2_norm
-        return pre_inputs, output, 0
+        return pre_inputs, output, norm(W1, b1, W2, b2)
 
 
 
