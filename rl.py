@@ -219,8 +219,8 @@ class ConvPongModel(BasePongModel):
 
         W_fc1 = weight_variable([FIELD_AREA * 16, 200])
         b_fc1 = self.bias_variable([200])
-        h_conv2_flat = tf.reshape(h_conv1, [-1, FIELD_AREA*16])
-        h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
+        h_conv1_flat = tf.reshape(h_conv1, [-1, FIELD_AREA*16])
+        h_fc1 = tf.nn.relu(tf.matmul(h_conv1_flat, W_fc1) + b_fc1)
 
         W_fcr = weight_variable([200, 1])
         b_fcr = self.bias_variable([1])
@@ -231,8 +231,7 @@ class ConvPongModel(BasePongModel):
         b_fc2 = self.bias_variable([self.ACTION_COUNT])
         y = tf.matmul(h_fc1, W_fc2) + b_fc2
         return pre_inputs, y, norm(
-                W_conv1, b_conv1, W_conv2, b_conv2,
-                W_fc1, b_fc1, W_fc2, b_fc2)
+                W_conv1, b_conv1, W_fc1, b_fc1, W_fc2, b_fc2)
 
 class SimplePongModel(BasePongModel):
     hidden_size = 200
