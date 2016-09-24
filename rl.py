@@ -14,6 +14,7 @@ class GenericModel(object):
     stochastic_factor = 0.05
     regularization = 0.1
     bias_slowdown = 0.1
+    value_rate = 0
 
     # implementation
     max_batch = 10000
@@ -22,6 +23,9 @@ class GenericModel(object):
     saves_dir = 'saves'
 
     # state
+
+    # default nodes
+    predicted_reward = tf.constant(0.0)
 
     def create_network(self):
         self.slow_bias_var = tf.placeholder(tf.float32)
@@ -55,7 +59,13 @@ class GenericModel(object):
         tf.scalar_summary('regularization', regularization_var)
         regular_loss = regularization_var * weight_norm
         tf.scalar_summary('weight_norm', weight_norm)
-        loss = -tf.reduce_sum(logprobs_taken * rewards) + regular_loss
+        surprise_rewards = rewards - tf.stop_gradient(self.predicted_rewards)
+        value_rate_var = tf.placeholder(tf.float32)
+        value_term = - value_rate_var * tf.reduce_sum(
+                tf.square(rewards - self.predicted_rewards))
+        reward_term = -tf.reduce_sum(logprobs_taken * surprise_rewards)
+        loss = reward_term + value_term + regular_loss
+
         rate_var = tf.placeholder(tf.float32)
         tf.scalar_summary('rate', rate_var)
         global_step = tf.Variable(
@@ -70,6 +80,7 @@ class GenericModel(object):
         self.actions_taken = actions_taken
         self.regularization_var = regularization_var
         self.rate_var = rate_var
+        self.value_rate_var = value_rate_var
         self.loss = loss
         self.opt = opt
         self.global_step = global_step
@@ -90,6 +101,7 @@ class GenericModel(object):
                      self.stochastic_var: self.stochastic_factor,
                      self.episode_length: epl,
                      self.regularization_var: self.regularization,
+                     self.value_rate_var: self.value_rate,
                      self.rate_var: self.learning_rate})
             self.summary_writer.add_summary(
                     summaries, self.global_step)
@@ -193,6 +205,7 @@ def norm(*args):
     return sum(tf.reduce_sum(a * a) for a in args)
 
 class ConvPongModel(BasePongModel):
+    value_rate = 1
     max_batch = 125
     def create_innards(self):
         FIELD_WIDTH = 80
@@ -210,6 +223,10 @@ class ConvPongModel(BasePongModel):
         b_fc1 = self.bias_variable([200])
         h_conv2_flat = tf.reshape(h_conv1, [-1, FIELD_AREA*16])
         h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1) + b_fc1)
+
+        W_fcr = weight_variable([200, 1])
+        b_fcr = self.bias_variable([1])
+        self.predicted_reward = tf.matmul(h_fc1, W_fcr) + b_fcr
 
         W_fc2 = tf.Variable(
                 tf.zeros_initializer([200, self.ACTION_COUNT]))
