@@ -68,10 +68,10 @@ class GenericModel(object):
 
         rate_var = tf.placeholder(tf.float32)
         tf.scalar_summary('rate', rate_var)
-        global_step = tf.Variable(
+        self.global_step = tf.Variable(
                 0, name='global_step', trainable=False)
         opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss,
-                global_step=global_step)
+                global_step=self.global_step)
 
 
         self.output = output
@@ -83,7 +83,6 @@ class GenericModel(object):
         self.value_rate_var = value_rate_var
         self.loss = loss
         self.opt = opt
-        self.global_step = global_step
         self.summaries = tf.merge_all_summaries()
 
 
@@ -92,8 +91,8 @@ class GenericModel(object):
         epl = len(states)
         for i in range(math.ceil(epl / self.max_batch)):
             s = slice(i * self.max_batch,(i+1) * self.max_batch)
-            _, summaries = self.session.run(
-                    [self.opt, self.summaries],
+            _, summaries, step = self.session.run(
+                    [self.opt, self.summaries, self.global_step],
                     {self.inputs: states[s],
                      self.actions_taken: actions[s],
                      self.rewards: expecteds[s],
@@ -103,8 +102,7 @@ class GenericModel(object):
                      self.regularization_var: self.regularization,
                      self.value_rate_var: self.value_rate,
                      self.rate_var: self.learning_rate})
-            self.summary_writer.add_summary(
-                    summaries, self.global_step)
+            self.summary_writer.add_summary(summaries, step)
         self.saver.save(self.session, self.save_path)
 
     def __init__(self, save_name, **kwargs):
