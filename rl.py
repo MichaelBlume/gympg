@@ -19,7 +19,7 @@ class GenericModel(object):
     learning_rate = 0.01
     stochastic_factor = 0.05
     regularization = 0.1
-    bias_slowdown = 0.1
+    bias_slowdown = 1
     value_rate = 0
 
     # implementation
@@ -185,8 +185,7 @@ class BasePongModel(GenericModel):
     GAME_NAME = 'Pong-v0'
     ACTION_COUNT = 6
 
-    discount_factor = 0.9
-    learning_rate = .001
+    learning_rate = .01
     reset_per_round = True
 
     def preproc_state(self, I):
@@ -212,8 +211,8 @@ def norm(*args):
     return sum(tf.reduce_sum(a * a) for a in args)
 
 class ConvPongModel(BasePongModel):
-    value_rate = 1
-    max_batch = 125
+    value_rate = 5
+    max_batch = 500
     def create_innards(self):
         FIELD_WIDTH = 80
         FIELD_AREA = FIELD_WIDTH * FIELD_WIDTH
