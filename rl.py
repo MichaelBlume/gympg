@@ -10,7 +10,7 @@ def reduce_stdev(t):
     return tf.sqrt(tf.reduce_mean(tf.square(t - m)))
 
 def explained_variance(t, p):
-    return 1 - reduce_stdev(t -p) / reduce_stdev(t)
+    return 1 - reduce_stdev(t - p) / reduce_stdev(t)
 
 class GenericModel(object):
 
