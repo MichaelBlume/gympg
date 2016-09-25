@@ -286,8 +286,8 @@ class GymTrainer(object):
             reversed_expecteds.append(running_reward)
             running_reward *= self.model.discount_factor
         expecteds = np.array(reversed_expecteds[::-1])
-        expecteds -= np.mean(expecteds)
-        expecteds /= np.std(expecteds)
+#       expecteds -= np.mean(expecteds)
+#       expecteds /= np.std(expecteds)
 
         self.model.update(self.states, self.actions, expecteds)
 
