@@ -61,7 +61,7 @@ class GenericModel(object):
         tf.scalar_summary('weight_norm', weight_norm)
         surprise_rewards = rewards - tf.stop_gradient(self.predicted_reward)
         value_rate_var = tf.placeholder(tf.float32)
-        value_term = - value_rate_var * tf.reduce_sum(
+        value_term = value_rate_var * tf.reduce_sum(
                 tf.square(rewards - self.predicted_reward))
         reward_term = -tf.reduce_sum(logprobs_taken * surprise_rewards)
         loss = reward_term + value_term + regular_loss
