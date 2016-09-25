@@ -78,7 +78,7 @@ class GenericModel(object):
         tf.scalar_summary('rate', rate_var)
         self.global_step = tf.Variable(
                 0, name='global_step', trainable=False)
-        opt = tf.train.RMSPropOptimizer(rate_var).minimize(loss,
+        opt = tf.train.AdamOptimizer(rate_var).minimize(loss,
                 global_step=self.global_step)
 
 
