@@ -5,6 +5,12 @@ import numpy as np
 import math
 import os.path
 
+def reduce_stdev(t):
+    m = tf.reduce_mean(t)
+    return tf.sqrt(tf.reduce_mean(tf.square(t - m)))
+
+def explained_variance(t, p):
+    return 1 - reduce_stdev(t -p) / reduce_stdev(t)
 
 class GenericModel(object):
 
@@ -63,6 +69,8 @@ class GenericModel(object):
         value_rate_var = tf.placeholder(tf.float32)
         value_term = value_rate_var * tf.reduce_sum(
                 tf.square(rewards - self.predicted_reward))
+        tf.scalar_summary('explained_variance',
+                tf.maximum(explained_variance(rewards, self.predicted_reward), -0.5))
         reward_term = -tf.reduce_sum(logprobs_taken * surprise_rewards)
         loss = reward_term + value_term + regular_loss
 
