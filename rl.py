@@ -115,7 +115,6 @@ class GenericModel(object):
         self.saver.save(self.session, self.save_path)
 
     def __init__(self, save_name, **kwargs):
-        self.save_name = save_name
         # you can set arbitrary hyperparameters
         for k, v in kwargs.items():
             if getattr(self, k, None) is None:
@@ -125,9 +124,9 @@ class GenericModel(object):
         with self.session:
             self.create_network()
         self.summary_writer = tf.train.SummaryWriter(
-                '%s/%s_summaries' % (self.saves_dir, self.save_name))
+                '%s/%s_summaries' % (self.saves_dir, save_name))
         self.saver = tf.train.Saver()
-        self.save_path = '%s/%s.ckpt' % (self.saves_dir, self.save_name)
+        self.save_path = '%s/%s.ckpt' % (self.saves_dir, save_name)
         if os.path.isfile(self.save_path):
             self.saver.restore(self.session, self.save_path)
         else:
