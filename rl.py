@@ -193,7 +193,7 @@ class BasePongModel(GenericModel):
 
     def collate_states(self, a, b, c):
         prev = np.zeros_like(c) if b is None else b
-        return c - prev
+        return np.concatenate((prev[...,np.newaxis],c[...,np.newaxis]), axis=2)
 
     def is_done(self, state, reward, done, info):
         return done or (reward != 0 and self.reset_per_round)
@@ -211,11 +211,10 @@ class ConvPongModel(BasePongModel):
         FIELD_WIDTH = 80
         FIELD_AREA = FIELD_WIDTH * FIELD_WIDTH
 
-        pre_inputs = tf.placeholder(tf.float32,
-                [None, FIELD_WIDTH, FIELD_WIDTH])
-        inputs = tf.reshape(pre_inputs, [-1, FIELD_WIDTH, FIELD_WIDTH, 1])
+        inputs = tf.placeholder(tf.float32,
+                [None, FIELD_WIDTH, FIELD_WIDTH, 2])
 
-        W_conv1 = weight_variable([3, 3, 1, 16])
+        W_conv1 = weight_variable([3, 3, 2, 16])
         b_conv1 = self.bias_variable([16])
         h_conv1 = tf.nn.relu6(conv2d(inputs, W_conv1) + b_conv1)
 
@@ -228,20 +227,19 @@ class ConvPongModel(BasePongModel):
         b_fcr = self.bias_variable([1])
         self.predicted_reward = tf.matmul(h_fc1, W_fcr) + b_fcr
 
-        W_fc2 = tf.Variable(
-                tf.zeros_initializer([200, self.ACTION_COUNT]))
+        W_fc2 = weight_variable([200, self.ACTION_COUNT])
         b_fc2 = self.bias_variable([self.ACTION_COUNT])
         y = tf.matmul(h_fc1, W_fc2) + b_fc2
-        return pre_inputs, y, norm(
+        return inputs, y, norm(
                 W_conv1, b_conv1, W_fc1, b_fc1, W_fc2, b_fc2)
 
 class SimplePongModel(BasePongModel):
     hidden_size = 200
     def create_innards(self):
-        pre_inputs = tf.placeholder(tf.float32, [None, 80, 80])
-        inputs = tf.reshape(pre_inputs, [-1, 6400])
+        pre_inputs = tf.placeholder(tf.float32, [None, 80, 80, 2])
+        inputs = tf.reshape(pre_inputs, [-1, 12800])
 
-        W1 = weight_variable([6400, self.hidden_size])
+        W1 = weight_variable([12800, self.hidden_size])
         b1 = self.bias_variable([self.hidden_size])
         h1 = tf.nn.relu6(tf.matmul(inputs, W1) + b1)
 
