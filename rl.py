@@ -107,7 +107,8 @@ class GenericModel(object):
                      self.value_rate_var: self.value_rate,
                      self.rate_var: self.learning_rate})
             self.summary_writer.add_summary(summaries, step)
-        self.saver.save(self.session, self.save_path)
+        if (step % 1000) == 0:
+            self.saver.save(self.session, self.save_path)
 
     def __init__(self, save_name, **kwargs):
         # you can set arbitrary hyperparameters
